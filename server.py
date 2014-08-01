@@ -1,4 +1,11 @@
+import argparse
+
 from flask import Flask, request
+
+parser = argparse.ArgumentParser(description="Start a Blindstore server.")
+parser.add_argument('-d', '--debug', action='store_true',
+                    help="enable Flask debug mode. DO NOT use in production.")
+args = parser.parse_args()
 
 app = Flask(__name__)
 
@@ -17,4 +24,4 @@ def put():
     return "/set '{index}' to '{data}'".format(data=enc_data, index=enc_index)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=args.debug)

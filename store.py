@@ -1,28 +1,14 @@
 from functools import reduce
 import numpy as np
 
+from utils import binary
+
 from pyscarab.scarab import generate_pair
 
 _ADD = lambda a, b: a + b
 _MUL = lambda a, b: a * b
 _AND = lambda a, b: a & b
 _XOR = lambda a, b: a ^ b
-
-
-def _binary(num, size=32):
-    """Binary representation of an integer as a list of 0, 1
-
-    >>> binary(10, 8)
-    [0, 0, 0, 0, 1, 0, 1, 0]
-
-    :param num:
-    :param size: size (pads with zeros)
-    :return: the binary representation of num
-    """
-    ret = np.zeros(size, dtype=np.int)
-    n = np.array([int(x) for x in list(bin(num)[2:])])
-    ret[ret.size - n.size:] = n
-    return ret
 
 
 def _gamma(cq, ci, co):
@@ -55,7 +41,7 @@ class Store:
             [[1] * min(self.record_size, x) + [0] * max(0, self.record_size - x) for x in range(self.record_count)])
 
     def retrieve(self, cipher_query, public_key):
-        indices = [_binary(x) for x in range(self.record_count)]
+        indices = [binary(x) for x in range(self.record_count)]
         cipher_indices = [public_key.encrypt(index) for index in indices]
         cipher_one = public_key.encrypt(1)
         gammas = np.array([_gamma(cipher_query, ci, cipher_one) for ci in cipher_indices])
@@ -66,6 +52,15 @@ class Store:
             tmp.append(_R(gammas, column, public_key))
 
         return tmp
+
+    def set(self, index, value):
+        if len(value) < self.record_size:
+            paddedValue = np.zeros(self.record_size, dtype=np.int)
+            paddedValue[paddedValue.size - len(value):] = value
+        else:
+            paddedValue = value
+
+        self.database[index] = paddedValue
 
 
 if __name__ == '__main__':

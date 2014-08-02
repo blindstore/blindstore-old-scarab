@@ -34,13 +34,26 @@ def _R(gammas, column, public_key):
 
 
 class Store:
-    def __init__(self):
-        self.record_size = 3
-        self.record_count = 5
+    """A private store."""
+
+    def __init__(self, record_size=3, record_count=5):
+        """
+        Creates a new private store.
+        :param record_size: the size of each record, in bits.
+        :param record_count: the number of records that can be stored.
+        """
+        self.record_size = record_size
+        self.record_count = record_count
         self.database = np.array(
             [[1] * min(self.record_size, x) + [0] * max(0, self.record_size - x) for x in range(self.record_count)])
 
     def retrieve(self, cipher_query, public_key):
+        """
+        Retrieves an encrypted record from the store, given a ciphered query.
+        :param cipher_query: the encrypted index of the record to retrieve, as
+                             an :class:`~EncryptedArray`
+        :param public_key: the :class:`~PublicKey` to use.
+        """
         indices = [binary(x) for x in range(self.record_count)]
         cipher_indices = [public_key.encrypt(index) for index in indices]
         cipher_one = public_key.encrypt(1)
@@ -54,6 +67,11 @@ class Store:
         return tmp
 
     def set(self, index, value):
+        """
+        Set a value in the array.
+        :param index: the unencrypted index to set.
+        :param value: the unencrypted value.
+        """
         if len(value) < self.record_size:
             paddedValue = np.zeros(self.record_size, dtype=np.int)
             paddedValue[paddedValue.size - len(value):] = value

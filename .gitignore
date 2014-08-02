@@ -52,3 +52,5 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# Added scarab/ directory to keep it as a separate code
+scarab/

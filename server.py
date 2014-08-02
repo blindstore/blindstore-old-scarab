@@ -14,9 +14,6 @@ parser.add_argument('-d', '--debug', action='store_true',
                     help="enable Flask debug mode. DO NOT use in production.")
 args = parser.parse_args()
 
-NUM_RECORDS = 5
-RECORD_SIZE = 64
-
 def _bytes_to_int(byte_string):
     struct.unpack('<L', byte_string)
 
@@ -26,8 +23,8 @@ store = Store()
 
 @app.route('/db_size')
 def get_db_size():
-    return json.dumps({'num_records': NUM_RECORDS, 'record_size': RECORD_SIZE}), \
-        200, {'Content-Type': 'text/json'}
+    data = {'num_records': store.record_count, 'record_size': store.record_size}
+    return json.dumps(data), 200, {'Content-Type': 'text/json'}
 
 
 @app.route('/retrieve', methods=['POST'])

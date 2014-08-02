@@ -22,7 +22,7 @@ def binary(num, size=32):
     :return: the binary representation of num
     """
     ret = np.zeros(size, dtype=np.int)
-    n = np.array([int(b) for b in list(bin(num)[2:])])
+    n = np.array([int(x) for x in list(bin(num)[2:])])
     ret[ret.size - n.size:] = n
     return ret
 
@@ -49,10 +49,9 @@ def R(gammas, column, public_key):
     return reduce(_XOR, gammas[np.where(column == 1)], public_key.encrypt(0))
 
 # #######
-RECORD_SIZE = 10
-RECORD_COUNT = 10
-
-database = np.array([[1] * x + [0] * (RECORD_SIZE - x) for x in range(RECORD_COUNT)])
+RECORD_SIZE = 3
+RECORD_COUNT = 5
+database = np.array([[1] * min(RECORD_SIZE, x) + [0] * max(0, RECORD_SIZE - x) for x in range(RECORD_COUNT)])
 ########
 
 
@@ -61,7 +60,11 @@ def server_generate_response(cipher_query, pk):
     cipher_indices = [pk.encrypt(index) for index in indices]
     cipher_one = pk.encrypt(1)
     gammas = np.array([gamma(cipher_query, ci, cipher_one) for ci in cipher_indices])
-    return np.array([R(gammas, database[:, c], pk) for c in range(RECORD_SIZE)])
+    tmp = []
+    for c in range(RECORD_SIZE):
+        foobar = database[:, c]
+        tmp.append(R(gammas, foobar, pk))
+    return np.array(tmp)
 
 
 def client_perform_query(i):
@@ -82,7 +85,7 @@ if __name__ == '__main__':
     print('keys were generated in', (b - a), 'seconds')
 
     a = time.clock()
-    row = client_perform_query(0)
+    row = client_perform_query(1)
     b = time.clock()
     print('response generated in', (b - a), 'seconds')
 

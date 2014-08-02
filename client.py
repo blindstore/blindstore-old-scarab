@@ -9,24 +9,6 @@ from pyscarab.scarab import EncryptedArray, EncryptedBit, \
 from utils import binary
 
 
-def _retrieve_from_server(url, public_key, index):
-    data = {
-        'PUBLIC_KEY': public_key,
-        'ENC_INDEX': index
-    }
-    r = requests.post(url + '/retrieve', data=data)
-    return r.text
-
-
-def _set_on_server(url, index, data):
-    data = {
-        'ENC_INDEX': index,
-        'ENC_DATA': data
-    }
-    r = requests.post(url + '/set', data=data)
-    return r.text
-
-
 class BlindstoreArray:
     def __init__(self, url):
         self.url = url if url.endswith('/') else url + '/'

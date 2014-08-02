@@ -1,7 +1,11 @@
 import argparse
+import base64
 import json
+import struct
+
 from flask import Flask, request
 from pyscarab.scarab import EncryptedArray, PublicKey
+from utils import binary
 from store import Store
 
 
@@ -13,10 +17,12 @@ args = parser.parse_args()
 NUM_RECORDS = 5
 RECORD_SIZE = 64
 
+def _bytes_to_int(byte_string):
+    struct.unpack('<L', byte_string)
+
 app = Flask(__name__)
 
 store = Store()
-
 
 @app.route('/db_size')
 def get_db_size():
@@ -38,12 +44,17 @@ def retrieve():
 
 
 @app.route('/set', methods=['POST'])
-def put():
-    pk = None
-    enc_index = EncryptedArray(request.form['ENC_INDEX'], pk)
-    enc_data = EncryptedArray(request.form['ENC_DATA'], pk)
+def set():
+    try:
+        index = int(request.form['INDEX'])
+        data = int.from_bytes(base64.b64decode(request.form['DATA']), 'big')
 
-    return "/set '{index}' to '{data}'".format(data=enc_data, index=enc_index)
+        store.set(index, binary(data, store.record_size))
+        return None, 200
+    except Exception as e:
+        #import traceback
+        #traceback.print_last()
+        print(e)
 
 
 if __name__ == '__main__':

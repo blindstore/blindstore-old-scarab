@@ -1,9 +1,12 @@
 import json
 import requests
 import numpy as np
+import base64
 
 from pyscarab.scarab import EncryptedArray, EncryptedBit, \
     PrivateKey, PublicKey, generate_pair
+
+from utils import binary
 
 
 def _retrieve_from_server(url, public_key, index):
@@ -24,22 +27,6 @@ def _set_on_server(url, index, data):
     return r.text
 
 
-def _binary(num, size=32):
-    """Binary representation of an integer as a list of 0, 1
-
-    >>> _binary(10, 8)
-    [0, 0, 0, 0, 1, 0, 1, 0]
-
-    :param num:
-    :param size: size (pads with zeros)
-    :return: the binary representation of num
-    """
-    ret = np.zeros(size, dtype=np.int)
-    n = np.array([int(x) for x in list(bin(num)[2:])])
-    ret[ret.size - n.size:] = n
-    return ret
-
-
 class BlindstoreArray:
     def __init__(self, url):
         self.url = url if url.endswith('/') else url + '/'
@@ -52,7 +39,7 @@ class BlindstoreArray:
 
     def retrieve(self, index):
         public_key, secret_key = generate_pair()
-        enc_index = public_key.encrypt(_binary(index))
+        enc_index = public_key.encrypt(binary(index))
 
         data = {'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index)}
         r = requests.post(self.url + 'retrieve', data=data)
@@ -60,10 +47,16 @@ class BlindstoreArray:
         return [secret_key.decrypt(bit) for bit in enc_data]
 
     def set(self, index, data):
-        pass
+        # data: byte string
+        data = {'INDEX': str(index), 'DATA': base64.b64encode(data)}
+        r = requests.post(self.url + 'set', data=data)
 
 
 if __name__ == '__main__':
     array = BlindstoreArray('http://localhost:5000/')
     print(array.length, array.record_size)
+    print(array.retrieve(1))
+    print("Setting entry 1...")
+    array.set(1, bytearray([2]))
+    print("Retrieving entry 1...")
     print(array.retrieve(1))

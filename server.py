@@ -14,9 +14,6 @@ parser.add_argument('-d', '--debug', action='store_true',
                     help="enable Flask debug mode. DO NOT use in production.")
 args = parser.parse_args()
 
-def _bytes_to_int(byte_string):
-    struct.unpack('<L', byte_string)
-
 app = Flask(__name__)
 
 store = Store()

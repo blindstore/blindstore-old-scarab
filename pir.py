@@ -1,12 +1,12 @@
 from functools import reduce
 import numpy as np
+import time
 from pyscarab.scarab import generate_pair
 
 _ADD = lambda a, b: a + b
 _MUL = lambda a, b: a * b
 _AND = lambda a, b: a & b
 _XOR = lambda a, b: a ^ b
-
 
 pk, sk = None, None
 
@@ -23,8 +23,9 @@ def binary(num, size=32):
     """
     ret = np.zeros(size, dtype=np.int)
     n = np.array([int(b) for b in list(bin(num)[2:])])
-    ret[ret.size-n.size:] = n
+    ret[ret.size - n.size:] = n
     return ret
+
 
 def gamma(cq, ci, co):
     """
@@ -47,12 +48,11 @@ def R(gammas, column, public_key):
     """
     return reduce(_XOR, gammas[np.where(column == 1)], public_key.encrypt(0))
 
-########
-database = np.array([[1, 0, 0],
-                     [1, 1, 0],
-                     [1, 1, 1]])
-RECORD_SIZE = 3
-RECORD_COUNT = 3
+# #######
+RECORD_SIZE = 10
+RECORD_COUNT = 10
+
+database = np.array([[1] * x + [0] * (RECORD_SIZE - x) for x in range(RECORD_COUNT)])
 ########
 
 
@@ -74,8 +74,16 @@ def client_perform_query(i):
 ########
 
 if __name__ == '__main__':
+    print('Database size:', RECORD_COUNT, 'x', RECORD_SIZE)
+
+    a = time.clock()
     pk, sk = generate_pair()
+    b = time.clock()
+    print('keys were generated in', (b - a), 'seconds')
+
+    a = time.clock()
     row = client_perform_query(0)
-    row = client_perform_query(1)
-    row = client_perform_query(2)
+    b = time.clock()
+    print('response generated in', (b - a), 'seconds')
+
     print(row)

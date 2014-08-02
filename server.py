@@ -1,4 +1,5 @@
 import argparse
+import json
 
 from flask import Flask, request
 
@@ -7,7 +8,14 @@ parser.add_argument('-d', '--debug', action='store_true',
                     help="enable Flask debug mode. DO NOT use in production.")
 args = parser.parse_args()
 
+NUM_RECORDS = 5
+RECORD_SIZE = 64
+
 app = Flask(__name__)
+
+@app.route('/db_size')
+def get_db_size():
+    return json.dumps({'num_records': NUM_RECORDS, 'record_size': RECORD_SIZE})
 
 @app.route('/retrieve', methods=['POST'])
 def get():

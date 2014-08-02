@@ -50,7 +50,7 @@ def set():
         data = int.from_bytes(base64.b64decode(request.form['DATA']), 'big')
 
         store.set(index, binary(data, store.record_size))
-        return None, 200
+        return '', 200
     except Exception as e:
         #import traceback
         #traceback.print_last()

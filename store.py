@@ -9,6 +9,7 @@ _MUL = lambda a, b: a * b
 _AND = lambda a, b: a & b
 _XOR = lambda a, b: a ^ b
 
+
 def binary(num, size=32):
     """Binary representation of an integer as a list of 0, 1
 
@@ -46,29 +47,33 @@ def R(gammas, column, public_key):
     """
     return reduce(_XOR, gammas[np.where(column == 1)], public_key.encrypt(0))
 
+
 class Store:
     def __init__(self):
         self.record_size = 3
         self.record_count = 5
-        self.database = np.array([[1] * min(self.record_size, x) + [0] * max(0, self.record_size - x) for x in range(self.record_count)])
+        self.database = np.array(
+            [[1] * min(self.record_size, x) + [0] * max(0, self.record_size - x) for x in range(self.record_count)])
 
     def retrieve(self, cipher_query, public_key):
         print("Starting retrieval")
         indices = [binary(x) for x in range(self.record_count)]
+        print('a')
         cipher_indices = [public_key.encrypt(index) for index in indices]
+        print('b')
         cipher_one = public_key.encrypt(1)
-
+        print('c')
         gammas = np.array([gamma(cipher_query, ci, cipher_one) for ci in cipher_indices])
-
         print("Computed gammas")
 
         tmp = []
         for c in range(self.record_size):
             column = self.database[:, c]
-            print("Computing R for column",c,"...")
+            print("Computing R for column", c, "...")
             tmp.append(R(gammas, column, public_key))
 
         return tmp
+
 
 if __name__ == '__main__':
     store = Store()

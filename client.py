@@ -5,26 +5,29 @@ import numpy as np
 from pyscarab.scarab import EncryptedArray, EncryptedBit, \
     PrivateKey, PublicKey, generate_pair
 
+
 def _retrieve_from_server(url, public_key, index):
     data = {
-            'PUBLIC_KEY': public_key,
-            'ENC_INDEX': index
-            }
+        'PUBLIC_KEY': public_key,
+        'ENC_INDEX': index
+    }
     r = requests.post(url + '/retrieve', data=data)
     return r.text
 
+
 def _set_on_server(url, index, data):
     data = {
-            'ENC_INDEX': index,
-            'ENC_DATA': data
-            }
+        'ENC_INDEX': index,
+        'ENC_DATA': data
+    }
     r = requests.post(url + '/set', data=data)
     return r.text
+
 
 def _binary(num, size=32):
     """Binary representation of an integer as a list of 0, 1
 
-    >>> binary(10, 8)
+    >>> _binary(10, 8)
     [0, 0, 0, 0, 1, 0, 1, 0]
 
     :param num:
@@ -35,6 +38,7 @@ def _binary(num, size=32):
     n = np.array([int(x) for x in list(bin(num)[2:])])
     ret[ret.size - n.size:] = n
     return ret
+
 
 class BlindstoreArray:
     def __init__(self, url):
@@ -47,16 +51,20 @@ class BlindstoreArray:
         return obj['num_records'], obj['record_size']
 
     def retrieve(self, index):
-        public_key, secret_key = generate_pair()
-        enc_index = public_key.encrypt(_binary(index))
+        try:
+            public_key, secret_key = generate_pair()
+            enc_index = public_key.encrypt(_binary(index))
 
-        data = { 'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index) }
-        r = requests.post(self.url + 'retrieve', data=data)
-        enc_data = [EncryptedBit(public_key, s) for s in json.loads(r.text)]
-        return [secret_key.decrypt(bit) for bit in enc_data]
+            data = {'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index)}
+            r = requests.post(self.url + 'retrieve', data=data)
+            enc_data = [EncryptedBit(public_key, s) for s in json.loads(r.text)]
+            return [secret_key.decrypt(bit) for bit in enc_data]
+        except Exception as e:
+            print('Something went wrong:', e)
 
     def set(self, index, data):
         pass
+
 
 if __name__ == '__main__':
     array = BlindstoreArray('http://localhost:5000/')

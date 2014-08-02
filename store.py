@@ -19,7 +19,7 @@ def _gamma(cq, ci, co):
     :param co: cipher one
     :return: the value of the gamma function
     """
-    return reduce(_AND, [a ^ b ^ co for a, b in zip(cq, ci)])
+    return reduce(_AND, [x ^ co for x in cq ^ ci])
 
 
 def _R(gammas, column, public_key):

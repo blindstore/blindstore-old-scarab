@@ -39,7 +39,7 @@ class BlindstoreArray:
         :returns: the value stored at the given index, as a bit array.
         """
         public_key, secret_key = generate_pair()
-        enc_index = public_key.encrypt(binary(index))
+        enc_index = public_key.encrypt(binary(index), secret_key)
 
         data = {'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index)}
         r = requests.post(self.url + 'retrieve', data=data)

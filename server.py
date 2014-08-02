@@ -15,7 +15,8 @@ app = Flask(__name__)
 
 @app.route('/db_size')
 def get_db_size():
-    return json.dumps({'num_records': NUM_RECORDS, 'record_size': RECORD_SIZE})
+    return json.dumps({'num_records': NUM_RECORDS, 'record_size': RECORD_SIZE}), \
+           200, {'Content-Type': 'text/json'}
 
 @app.route('/retrieve', methods=['POST'])
 def get():

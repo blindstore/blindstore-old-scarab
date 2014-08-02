@@ -3,7 +3,7 @@ import numpy as np
 
 from utils import binary
 
-from pyscarab.scarab import generate_pair
+from scarab import generate_pair
 
 _ADD = lambda a, b: a + b
 _MUL = lambda a, b: a * b

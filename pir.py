@@ -1,7 +1,7 @@
 from functools import reduce
 import numpy as np
 import time
-from pyscarab.scarab import EncryptedArray, EncryptedBit, \
+from scarab import EncryptedArray, EncryptedBit, \
     PrivateKey, PublicKey, generate_pair
 
 _ADD = lambda a, b: a + b

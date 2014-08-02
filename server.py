@@ -4,7 +4,7 @@ import json
 import struct
 
 from flask import Flask, request
-from pyscarab.scarab import EncryptedArray, PublicKey
+from scarab import EncryptedArray, PublicKey
 from utils import binary
 from store import Store
 

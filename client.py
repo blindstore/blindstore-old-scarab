@@ -3,7 +3,7 @@ import requests
 import numpy as np
 import base64
 
-from pyscarab.scarab import EncryptedArray, EncryptedBit, \
+from scarab import EncryptedArray, EncryptedBit, \
     PrivateKey, PublicKey, generate_pair
 
 from utils import binary

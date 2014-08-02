@@ -1,7 +1,8 @@
 from functools import reduce
 import numpy as np
 import time
-from pyscarab.scarab import generate_pair
+from pyscarab.scarab import EncryptedArray, EncryptedBit, \
+    PrivateKey, PublicKey, generate_pair
 
 _ADD = lambda a, b: a + b
 _MUL = lambda a, b: a * b
@@ -66,9 +67,18 @@ def server_generate_response(cipher_query, pk):
         tmp.append(R(gammas, foobar, pk))
     return np.array(tmp)
 
+def serialize_and_deserialize(cipher_query, public_key):
+    serialized_query = str(cipher_query)
+    serialized_public_key = str(public_key)
+    deserialized_public_key = PublicKey(serialized_public_key)
+    deserialized_query = EncryptedArray(len(cipher_query), deserialized_public_key, serialized_query)
+    enc_data = server_generate_response(deserialized_query, deserialized_public_key)
+    s_bits = [str(bit) for bit in enc_data]
+    deserialized_enc_data = [EncryptedBit(public_key, bit) for bit in s_bits]
+    return deserialized_enc_data
 
 def client_perform_query(i):
-    response = server_generate_response(pk.encrypt(binary(i)), pk)
+    response = serialize_and_deserialize(pk.encrypt(binary(i)), pk)
     result = [sk.decrypt(r) for r in response]
     return result
 

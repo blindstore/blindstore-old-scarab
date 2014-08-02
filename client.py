@@ -1,10 +1,9 @@
 import json
 import requests
+import numpy as np
 
-def _get_db_size(url):
-    r = requests.get(url + '/db_size')
-    obj = json.loads(r.text)
-    return obj['num_records'], obj['record_size']
+from pyscarab.scarab import EncryptedArray, EncryptedBit, \
+    PrivateKey, PublicKey, generate_pair
 
 def _retrieve_from_server(url, public_key, index):
     data = {
@@ -22,10 +21,44 @@ def _set_on_server(url, index, data):
     r = requests.post(url + '/set', data=data)
     return r.text
 
-URL = 'http://localhost:5000'
+def _binary(num, size=32):
+    """Binary representation of an integer as a list of 0, 1
 
-num_records, record_size = _get_db_size(URL)
+    >>> binary(10, 8)
+    [0, 0, 0, 0, 1, 0, 1, 0]
 
-print("The database has {0} records of {1} bits.".format(num_records, record_size))
-print(_retrieve_from_server(URL, "antidisestablishmentarianism", "gobbledegookindex"))
-print(_set_on_server(URL, "gobbledegookindex", "gobbledegookvalue"))
+    :param num:
+    :param size: size (pads with zeros)
+    :return: the binary representation of num
+    """
+    ret = np.zeros(size, dtype=np.int)
+    n = np.array([int(x) for x in list(bin(num)[2:])])
+    ret[ret.size - n.size:] = n
+    return ret
+
+class BlindstoreArray:
+    def __init__(self, url):
+        self.url = url if url.endswith('/') else url + '/'
+        self.length, self.record_size = self.get_db_size()
+
+    def get_db_size(self):
+        r = requests.get(self.url + 'db_size')
+        obj = json.loads(r.text)
+        return obj['num_records'], obj['record_size']
+
+    def retrieve(self, index):
+        public_key, secret_key = generate_pair()
+        enc_index = public_key.encrypt(_binary(index))
+
+        data = { 'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index) }
+        r = requests.post(self.url + 'retrieve', data=data)
+        enc_data = [EncryptedBit(public_key, s) for s in json.loads(r.text)]
+        return [secret_key.decrypt(bit) for bit in enc_data]
+
+    def set(self, index, data):
+        pass
+
+if __name__ == '__main__':
+    array = BlindstoreArray('http://localhost:5000/')
+    print(array.length, array.record_size)
+    print(array.retrieve(1))

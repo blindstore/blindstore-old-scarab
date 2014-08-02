@@ -1,8 +1,7 @@
 from functools import reduce
 import numpy as np
 
-from pyscarab.scarab import EncryptedArray, EncryptedBit, \
-    PrivateKey, PublicKey, generate_pair
+from pyscarab.scarab import generate_pair
 
 _ADD = lambda a, b: a + b
 _MUL = lambda a, b: a * b
@@ -10,7 +9,7 @@ _AND = lambda a, b: a & b
 _XOR = lambda a, b: a ^ b
 
 
-def binary(num, size=32):
+def _binary(num, size=32):
     """Binary representation of an integer as a list of 0, 1
 
     >>> binary(10, 8)
@@ -26,7 +25,7 @@ def binary(num, size=32):
     return ret
 
 
-def gamma(cq, ci, co):
+def _gamma(cq, ci, co):
     """
     Calculates the value of the gamma function, as described in PDF (paragraph 3.1.2)
     :param cq: cipher query
@@ -37,7 +36,7 @@ def gamma(cq, ci, co):
     return reduce(_AND, [a ^ b ^ co for a, b in zip(cq, ci)])
 
 
-def R(gammas, column, public_key):
+def _R(gammas, column, public_key):
     """
     Calculates the value of R() function, as described in PDF (paragraph 3.1.3)
     :param gammas: gammas
@@ -56,21 +55,15 @@ class Store:
             [[1] * min(self.record_size, x) + [0] * max(0, self.record_size - x) for x in range(self.record_count)])
 
     def retrieve(self, cipher_query, public_key):
-        print("Starting retrieval")
-        indices = [binary(x) for x in range(self.record_count)]
-        print('a')
+        indices = [_binary(x) for x in range(self.record_count)]
         cipher_indices = [public_key.encrypt(index) for index in indices]
-        print('b')
         cipher_one = public_key.encrypt(1)
-        print('c')
-        gammas = np.array([gamma(cipher_query, ci, cipher_one) for ci in cipher_indices])
-        print("Computed gammas")
+        gammas = np.array([_gamma(cipher_query, ci, cipher_one) for ci in cipher_indices])
 
         tmp = []
         for c in range(self.record_size):
             column = self.database[:, c]
-            print("Computing R for column", c, "...")
-            tmp.append(R(gammas, column, public_key))
+            tmp.append(_R(gammas, column, public_key))
 
         return tmp
 

@@ -25,23 +25,13 @@ def get_db_size():
 
 
 @app.route('/retrieve', methods=['POST'])
-def get():
-    print("Deserializing arguments.")
-
+def retrieve():
+    print("Starting retrieve call...")
     public_key = PublicKey(request.form['PUBLIC_KEY'])
-    #public_key = request.form['PUBLIC_KEY']
-
-    print('Public key:', public_key)
-    is_correct = isinstance(public_key, PublicKey)
-    print('correct?', is_correct)
-    assert is_correct
-    print('Ok!')
 
     enc_index = EncryptedArray(store.record_size, public_key, request.form['ENC_INDEX'])
     enc_data = store.retrieve(enc_index, public_key)
-    print("Retrieval successful. Serializing bits...")
     s_bits = [str(b) for b in enc_data]
-    print("Making JSON...")
     obj = json.dumps(s_bits)
 
     return obj

@@ -51,16 +51,13 @@ class BlindstoreArray:
         return obj['num_records'], obj['record_size']
 
     def retrieve(self, index):
-        try:
-            public_key, secret_key = generate_pair()
-            enc_index = public_key.encrypt(_binary(index))
+        public_key, secret_key = generate_pair()
+        enc_index = public_key.encrypt(_binary(index))
 
-            data = {'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index)}
-            r = requests.post(self.url + 'retrieve', data=data)
-            enc_data = [EncryptedBit(public_key, s) for s in json.loads(r.text)]
-            return [secret_key.decrypt(bit) for bit in enc_data]
-        except Exception as e:
-            print('Something went wrong:', e)
+        data = {'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index)}
+        r = requests.post(self.url + 'retrieve', data=data)
+        enc_data = [EncryptedBit(public_key, s) for s in json.loads(r.text)]
+        return [secret_key.decrypt(bit) for bit in enc_data]
 
     def set(self, index, data):
         pass

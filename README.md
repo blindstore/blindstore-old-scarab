@@ -6,7 +6,12 @@ Blindstore server
 Installation
 ------------
 
-Blindstore depends on [Python](https://python.org/) 3.4 and the [Flask](http://flask.pocoo.org/) Web framework. [Installation instructions for Flask](http://flask.pocoo.org/docs/installation/) are available on the Flask website.
+System requirements: [numpy](https://numpy.org), [libscarab](https://github.com/blindstore/libScarab).
+
+Python requirements:
+```
+pip install -r requirements.txt
+```
 
 Running
 -------

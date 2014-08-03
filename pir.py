@@ -1,6 +1,7 @@
 from functools import reduce
 import numpy as np
 import time
+
 from scarab import EncryptedArray, EncryptedBit, \
     PrivateKey, PublicKey, generate_pair
 

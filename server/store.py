@@ -1,9 +1,10 @@
 from functools import reduce
 import numpy as np
 
-from utils import binary
-
 from scarab import generate_pair
+
+from common.utils import binary
+
 
 _ADD = lambda a, b: a + b
 _MUL = lambda a, b: a * b

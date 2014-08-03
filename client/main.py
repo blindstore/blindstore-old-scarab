@@ -15,7 +15,8 @@ except ImportError:
     print("Warning: no logging defined", file=sys.stderr)
     demo_logger = None
 else:
-    demo_logger = bs_demo.DemoClient('http://dellvostropersonaldk.dyndns.cern.ch:3000')
+    demo_logger = bs_demo.DemoClient('http://training-molina.cern.ch')
+    #demo_logger = bs_demo.DemoClient('http://dellvostropersonaldk.dyndns.cern.ch:3000')
 
 def demo_log(title, message):
     if demo_logger is not None:

@@ -3,7 +3,7 @@ from client import BlindstoreArray
 
 
 if __name__ == '__main__':
-    array = BlindstoreArray('http://localhost:5000/')
+    array = BlindstoreArray('http://training-molina.cern.ch:5000/')
     print(array.length, array.record_size, array.index_length)
 
     start = time.clock()

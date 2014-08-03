@@ -4,6 +4,7 @@ import json
 from flask import Flask, request
 import numpy as np
 from scarab import EncryptedArray, PublicKey
+import time
 
 from .store import Store
 from common.utils import binary
@@ -29,9 +30,8 @@ def get_db_size():
 
 @app.route('/retrieve', methods=['POST'])
 def retrieve():
-    print("Starting retrieve call...")
+    start = time.clock()
     public_key = PublicKey(str(request.form['PUBLIC_KEY']))
-
     enc_index = EncryptedArray(store.index_length, public_key, request.form['ENC_INDEX'])
     try:
         enc_data = store.retrieve(enc_index, public_key)
@@ -41,7 +41,7 @@ def retrieve():
 
     s_bits = [str(b) for b in enc_data]
     obj = json.dumps(s_bits)
-
+    print('Retrieve() took', time.clock() - start, 'seconds')
     return obj
 
 

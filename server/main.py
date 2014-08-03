@@ -4,6 +4,7 @@ import json
 from flask import Flask, request
 import numpy as np
 from scarab import EncryptedArray, PublicKey
+import time
 
 from .store import Store
 from common.utils import binary
@@ -21,6 +22,10 @@ def demo_log(title, message):
     if demo_logger is not None:
         demo_logger.server_msg(title, message)
 
+def server_status(db):
+    if demo_logger is not None:
+        demo_logger.server_status(db.tolist())
+
 
 app = Flask(__name__)
 
@@ -28,7 +33,7 @@ store = Store(database=np.array([[1, 1, 1, 1],
                                  [1, 1, 1, 0],
                                  [1, 1, 0, 0],
                                  [1, 0, 0, 0]]))
-
+server_status(store.database)
 
 @app.route('/db_size')
 def get_db_size():
@@ -44,8 +49,9 @@ def get_db_size():
 def retrieve():
     demo_log("Received query", request.form['ENC_INDEX'])
     print("Starting retrieve call...")
-    public_key = PublicKey(str(request.form['PUBLIC_KEY']))
+    start = time.clock()
 
+    public_key = PublicKey(str(request.form['PUBLIC_KEY']))
     enc_index = EncryptedArray(store.index_length, public_key, request.form['ENC_INDEX'])
     try:
         enc_data = store.retrieve(enc_index, public_key)
@@ -57,6 +63,7 @@ def retrieve():
     obj = json.dumps(s_bits)
 
     demo_log("Retrieved an encrypted row", obj)
+    print('Retrieve() took', time.clock() - start, 'seconds')
     return obj
 
 
@@ -68,5 +75,6 @@ def set():
     demo_log("Set", "Set row {index} to {data}".format(index=index, data=data))
 
     store.set(index, binary(data, store.record_size))
+    server_status(store.database)
     return '', 200
 

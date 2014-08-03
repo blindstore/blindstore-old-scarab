@@ -1,10 +1,12 @@
+from concurrent.futures import ThreadPoolExecutor
 from functools import reduce
-import time
 
 import numpy as np
 from scarab import generate_pair
 
 from common.utils import binary, index_length
+
+pool = ThreadPoolExecutor(max_workers=2)
 
 
 _ADD = lambda a, b: a + b
@@ -62,26 +64,25 @@ class Store:
                              an :class:`~EncryptedArray`
         :param public_key: the :class:`~PublicKey` to use.
         """
-        if len(cipher_query) != self.index_length:
-            msg = "The cipher query length ({0} bits) is incorrect. It should be {1} bits long."
-            raise ValueError(msg.format(len(cipher_query), self.index_length))
-
-        indices = [binary(x, size=self.index_length) for x in range(self.record_count)]
-        cipher_indices = [public_key.encrypt(index) for index in indices]
         cipher_one = public_key.encrypt(1)
-        gammas = np.array([_gamma(cipher_query, ci, cipher_one) for ci in cipher_indices])
 
-        tmp = []
-        for c in range(self.record_size):
-            column = self.database[:, c]
-            tmp.append(_R(gammas, column, public_key))
+        def func(x):
+            x = binary(x, size=self.index_length)
+            x = public_key.encrypt(x)
+            x = _gamma(cipher_query, x, cipher_one)
+            return x
 
-        return tmp
+        # TODO: make this parallel
+        gammas = map(func, range(self.record_count))
+        gammas = np.array(list(gammas))
 
-    def set(self, index, value):
+        # TODO: make this parallel
+        return map(lambda x: _R(gammas, self.database[:, x], public_key), range(self.record_size))
+
+    def set(self, idx, value):
         """
         Set a value in the array.
-        :param index: the unencrypted index to set.
+        :param idx: the unencrypted index to set.
         :param value: the unencrypted value.
         """
         if len(value) < self.record_size:
@@ -90,15 +91,12 @@ class Store:
         else:
             padded_value = value
 
-        self.database[index] = padded_value
+        self.database[idx] = padded_value
 
 
 if __name__ == '__main__':
-    store = Store()
+    store = Store(record_count=8, record_size=8)
     pk, sk = generate_pair()
     index = 2
-    a = time.clock()
     enc_data = store.retrieve(pk.encrypt(binary(index, size=store.index_length)), pk)
     print([sk.decrypt(bit) for bit in enc_data])
-    b = time.clock()
-    print("Took", (b - a), "seconds")

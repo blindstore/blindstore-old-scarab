@@ -1,3 +1,5 @@
+![logo](http://i.imgur.com/Yj5qUjm.png?1)
+
 blindstore
 ==========
 

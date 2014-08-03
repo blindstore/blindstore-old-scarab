@@ -8,6 +8,18 @@ from scarab import EncryptedArray, EncryptedBit, \
 
 from common.utils import binary
 
+try:
+    import bs_demo
+except ImportError:
+    import sys
+    print("Warning: no logging defined", file=sys.stderr)
+    demo_logger = None
+else:
+    demo_logger = bs_demo.DemoClient('http://dellvostropersonaldk.dyndns.cern.ch:3000')
+
+def demo_log(title, message):
+    if demo_logger is not None:
+        demo_logger.client_msg(title, message)
 
 class BlindstoreArray:
     """
@@ -22,6 +34,7 @@ class BlindstoreArray:
         self.url = url if url.endswith('/') else url + '/'
         self.get_db_size()
 
+
     def get_db_size(self):
         """
         Get the size of the Blindstore array on the server.
@@ -33,6 +46,11 @@ class BlindstoreArray:
         self.length = obj['num_records']
         self.record_size = obj['record_size']
         self.index_length = obj['index_length']
+
+        demo_log('Received DB Metadata',
+                 'Record size: {}, Number of records: {}'.format(
+                     self.record_size, self.length)
+        )
 
     def retrieve(self, index):
         """

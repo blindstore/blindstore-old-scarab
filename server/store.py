@@ -61,6 +61,8 @@ class Store:
         :param cipher_query: the encrypted index of the record to retrieve, as
                              an :class:`~EncryptedArray`
         :param public_key: the :class:`~PublicKey` to use.
+        :raises ValueError: if the length of cipher_query does not equal the \
+                            Store's index_length.
         """
         if len(cipher_query) != self.index_length:
             msg = "The cipher query length ({0} bits) is incorrect. It should be {1} bits long."
@@ -92,13 +94,3 @@ class Store:
 
         self.database[index] = padded_value
 
-
-if __name__ == '__main__':
-    store = Store()
-    pk, sk = generate_pair()
-    index = 2
-    a = time.clock()
-    enc_data = store.retrieve(pk.encrypt(binary(index, size=store.index_length)), pk)
-    print([sk.decrypt(bit) for bit in enc_data])
-    b = time.clock()
-    print("Took", (b - a), "seconds")

@@ -1,8 +1,7 @@
 from functools import reduce
-import numpy as np
 import time
-import math
 
+import numpy as np
 from scarab import generate_pair
 
 from common.utils import binary, index_length
@@ -39,17 +38,22 @@ def _R(gammas, column, public_key):
 class Store:
     """A private store."""
 
-    def __init__(self, record_size=3, record_count=5):
+    def __init__(self, record_size=3, record_count=5, database=None):
         """
         Creates a new private store.
         :param record_size: the size of each record, in bits.
         :param record_count: the number of records that can be stored.
+        :param database: numpy matrix of database values.
         """
-        self.record_size = record_size
-        self.record_count = record_count
-        self.index_length = index_length(record_count)
-        self.database = np.array(
-            [[1] * min(self.record_size, x) + [0] * max(0, self.record_size - x) for x in range(self.record_count)])
+        if database is None:
+            self.record_size = record_size
+            self.record_count = record_count
+            self.database = np.array([[0] * record_size for _ in range(record_count)])
+        else:
+            self.record_count, self.record_size = database.shape
+            self.database = database
+
+        self.index_length = index_length(self.record_count)
 
     def retrieve(self, cipher_query, public_key):
         """
@@ -81,12 +85,12 @@ class Store:
         :param value: the unencrypted value.
         """
         if len(value) < self.record_size:
-            paddedValue = np.zeros(self.record_size, dtype=np.int)
-            paddedValue[paddedValue.size - len(value):] = value
+            padded_value = np.zeros(self.record_size, dtype=np.int)
+            padded_value[padded_value.size - len(value):] = value
         else:
-            paddedValue = value
+            padded_value = value
 
-        self.database[index] = paddedValue
+        self.database[index] = padded_value
 
 
 if __name__ == '__main__':
@@ -97,4 +101,4 @@ if __name__ == '__main__':
     enc_data = store.retrieve(pk.encrypt(binary(index, size=store.index_length)), pk)
     print([sk.decrypt(bit) for bit in enc_data])
     b = time.clock()
-    print("Took",(b-a),"seconds")
+    print("Took", (b - a), "seconds")

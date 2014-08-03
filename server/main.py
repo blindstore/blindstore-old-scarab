@@ -1,8 +1,8 @@
 import base64
 import json
-import struct
 
 from flask import Flask, request
+import numpy as np
 from scarab import EncryptedArray, PublicKey
 
 from .store import Store
@@ -11,7 +11,11 @@ from common.utils import binary
 
 app = Flask(__name__)
 
-store = Store()
+store = Store(database=np.array([[1, 1, 1, 1],
+                                 [1, 1, 1, 0],
+                                 [1, 1, 0, 0],
+                                 [1, 0, 0, 0]]))
+
 
 @app.route('/db_size')
 def get_db_size():
@@ -43,13 +47,9 @@ def retrieve():
 
 @app.route('/set', methods=['POST'])
 def set():
-    try:
-        index = int(request.form['INDEX'])
-        data = int.from_bytes(base64.b64decode(request.form['DATA']), 'big')
+    index = int(request.form['INDEX'])
+    data = int.from_bytes(base64.b64decode(request.form['DATA']), 'big')
 
-        store.set(index, binary(data, store.record_size))
-        return '', 200
-    except Exception as e:
-        #import traceback
-        #traceback.print_last()
-        print(e)
+    store.set(index, binary(data, store.record_size))
+    return '', 200
+

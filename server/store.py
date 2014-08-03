@@ -1,9 +1,11 @@
 from functools import reduce
 import numpy as np
+import time
+import math
 
 from scarab import generate_pair
 
-from common.utils import binary
+from common.utils import binary, index_length
 
 
 _ADD = lambda a, b: a + b
@@ -45,6 +47,7 @@ class Store:
         """
         self.record_size = record_size
         self.record_count = record_count
+        self.index_length = index_length(record_count)
         self.database = np.array(
             [[1] * min(self.record_size, x) + [0] * max(0, self.record_size - x) for x in range(self.record_count)])
 
@@ -55,7 +58,11 @@ class Store:
                              an :class:`~EncryptedArray`
         :param public_key: the :class:`~PublicKey` to use.
         """
-        indices = [binary(x) for x in range(self.record_count)]
+        if len(cipher_query) != self.index_length:
+            msg = "The cipher query length ({0} bits) is incorrect. It should be {1} bits long."
+            raise ValueError(msg.format(len(cipher_query), self.index_length))
+
+        indices = [binary(x, size=self.index_length) for x in range(self.record_count)]
         cipher_indices = [public_key.encrypt(index) for index in indices]
         cipher_one = public_key.encrypt(1)
         gammas = np.array([_gamma(cipher_query, ci, cipher_one) for ci in cipher_indices])
@@ -86,6 +93,8 @@ if __name__ == '__main__':
     store = Store()
     pk, sk = generate_pair()
     index = 2
-    enc_data = store.retrieve(pk.encrypt(binary(index)), pk)
-    print(store.database)
+    a = time.clock()
+    enc_data = store.retrieve(pk.encrypt(binary(index, size=store.index_length)), pk)
     print([sk.decrypt(bit) for bit in enc_data])
+    b = time.clock()
+    print("Took",(b-a),"seconds")

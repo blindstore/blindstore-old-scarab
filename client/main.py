@@ -20,7 +20,7 @@ class BlindstoreArray:
         :param url: the URL of the server to connect to.
         """
         self.url = url if url.endswith('/') else url + '/'
-        self.length, self.record_size = self.get_db_size()
+        self.get_db_size()
 
     def get_db_size(self):
         """
@@ -30,7 +30,9 @@ class BlindstoreArray:
         """
         r = requests.get(self.url + 'db_size')
         obj = json.loads(r.text)
-        return obj['num_records'], obj['record_size']
+        self.length = obj['num_records']
+        self.record_size = obj['record_size']
+        self.index_length = obj['index_length']
 
     def retrieve(self, index):
         """
@@ -39,7 +41,7 @@ class BlindstoreArray:
         :returns: the value stored at the given index, as a bit array.
         """
         public_key, secret_key = generate_pair()
-        enc_index = public_key.encrypt(binary(index), secret_key)
+        enc_index = public_key.encrypt(binary(index, size=self.index_length), secret_key)
 
         data = {'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index)}
         r = requests.post(self.url + 'retrieve', data=data)

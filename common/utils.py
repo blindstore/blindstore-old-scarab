@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 def binary(num, size=32):
@@ -15,4 +16,5 @@ def binary(num, size=32):
     ret[ret.size - n.size:] = n
     return ret
 
-
+def index_length(record_count):
+    return math.ceil(math.log(record_count, 2)) + 1

@@ -15,7 +15,11 @@ store = Store()
 
 @app.route('/db_size')
 def get_db_size():
-    data = {'num_records': store.record_count, 'record_size': store.record_size}
+    data = {
+        'num_records': store.record_count,
+        'record_size': store.record_size,
+        'index_length': store.index_length
+    }
     return json.dumps(data), 200, {'Content-Type': 'text/json'}
 
 
@@ -24,8 +28,13 @@ def retrieve():
     print("Starting retrieve call...")
     public_key = PublicKey(str(request.form['PUBLIC_KEY']))
 
-    enc_index = EncryptedArray(store.record_size, public_key, request.form['ENC_INDEX'])
-    enc_data = store.retrieve(enc_index, public_key)
+    enc_index = EncryptedArray(store.index_length, public_key, request.form['ENC_INDEX'])
+    try:
+        enc_data = store.retrieve(enc_index, public_key)
+    except ValueError as e:
+        print(str(e))
+        return str(e), 400
+
     s_bits = [str(b) for b in enc_data]
     obj = json.dumps(s_bits)
 

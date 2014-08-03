@@ -43,7 +43,7 @@ class BlindstoreArray:
 
         data = {'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index)}
         r = requests.post(self.url + 'retrieve', data=data)
-        enc_data = [EncryptedBit(public_key, s) for s in json.loads(r.text)]
+        enc_data = [EncryptedBit(public_key, str(s)) for s in json.loads(r.text)]
         return [secret_key.decrypt(bit) for bit in enc_data]
 
     def set(self, index, data):

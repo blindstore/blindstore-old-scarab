@@ -54,9 +54,6 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
-# Added scarab/ directory to keep it as a separate code
-scarab/
-
 # Created by http://www.gitignore.io
 
 ### PyCharm ###

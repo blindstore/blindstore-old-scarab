@@ -22,7 +22,7 @@ def get_db_size():
 @app.route('/retrieve', methods=['POST'])
 def retrieve():
     print("Starting retrieve call...")
-    public_key = PublicKey(request.form['PUBLIC_KEY'])
+    public_key = PublicKey(str(request.form['PUBLIC_KEY']))
 
     enc_index = EncryptedArray(store.record_size, public_key, request.form['ENC_INDEX'])
     enc_data = store.retrieve(enc_index, public_key)

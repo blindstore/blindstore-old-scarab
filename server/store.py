@@ -1,16 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
 from functools import reduce
-
 import numpy as np
 from scarab import generate_pair
-
 from common.utils import binary, index_length
 
-pool = ThreadPoolExecutor(max_workers=2)
 
-
-_ADD = lambda a, b: a + b
-_MUL = lambda a, b: a * b
 _AND = lambda a, b: a & b
 _XOR = lambda a, b: a ^ b
 

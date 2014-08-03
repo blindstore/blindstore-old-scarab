@@ -63,6 +63,8 @@ class Store:
         :param cipher_query: the encrypted index of the record to retrieve, as
                              an :class:`~EncryptedArray`
         :param public_key: the :class:`~PublicKey` to use.
+        :raises ValueError: if the length of cipher_query does not equal the \
+                            Store's index_length.
         """
         cipher_one = public_key.encrypt(1)
 

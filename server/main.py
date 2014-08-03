@@ -21,6 +21,10 @@ def demo_log(title, message):
     if demo_logger is not None:
         demo_logger.server_msg(title, message)
 
+def server_status(db):
+    if demo_logger is not None:
+        demo_logger.server_status(db.tolist())
+
 
 app = Flask(__name__)
 
@@ -28,7 +32,7 @@ store = Store(database=np.array([[1, 1, 1, 1],
                                  [1, 1, 1, 0],
                                  [1, 1, 0, 0],
                                  [1, 0, 0, 0]]))
-
+server_status(store.database)
 
 @app.route('/db_size')
 def get_db_size():
@@ -68,5 +72,6 @@ def set():
     demo_log("Set", "Set row {index} to {data}".format(index=index, data=data))
 
     store.set(index, binary(data, store.record_size))
+    server_status(store.database)
     return '', 200
 

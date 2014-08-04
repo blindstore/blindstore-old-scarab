@@ -1,6 +1,6 @@
 from functools import reduce
 import numpy as np
-from scarab import generate_pair
+from scarab import generate_pair, EncryptedArray
 from common.utils import binary, index_length
 
 
@@ -49,6 +49,43 @@ class Store:
             self.database = database
 
         self.index_length = index_length(self.record_count)
+
+    def retrieve2(self, cipher_query, public_key):
+        """
+
+        ACHTUNG:
+        Alternative implementation with reusing the same cipher_zero and cipher_one.
+
+
+        Retrieves an encrypted record from the store, given a ciphered query.
+        :param cipher_query: the encrypted index of the record to retrieve, as
+                             an :class:`~EncryptedArray`
+        :param public_key: the :class:`~PublicKey` to use.
+        :raises ValueError: if the length of cipher_query does not equal the \
+                            Store's index_length.
+        """
+        cipher_one = public_key.encrypt(1)
+        cipher_zro = public_key.encrypt(0)
+
+        def get_encoded_index(x):
+            arr = [cipher_one if bit == 1 else cipher_zro for bit in binary(x, size=self.index_length)]
+            enc = EncryptedArray(len(arr), public_key)
+            for i in range(len(arr)):
+                enc._array[i] = arr[i]._as_parameter_  # yes, I know, protected. How about moving this to pyscarab?
+            return enc
+
+        def func(x):
+            x = get_encoded_index(x)
+            x = _gamma(cipher_query, x, cipher_one)
+            return x
+
+        # TODO: make this parallel
+        gammas = map(func, range(self.record_count))
+        gammas = np.array(list(gammas))
+
+        # TODO: make this parallel
+        return map(lambda x: _R(gammas, self.database[:, x], public_key), range(self.record_size))
+
 
     def retrieve(self, cipher_query, public_key):
         """

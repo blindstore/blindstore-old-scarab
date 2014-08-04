@@ -52,3 +52,14 @@ To store data on the server, we call the `set` method, passing the index to set 
 To retrieve data, simply call `retrieve` with the index. The data is returned as a list of bits.
 
 Both `set` and `retrieve` calls are synchronous.
+
+License
+-------
+[MIT License](http://opensource.org/licenses/MIT)
+
+Credits
+-------
+
+Logo: 
+* Eye designed by <a href="http://www.thenounproject.com/eugen.belyakoff">Eugen Belyakoff</a> from the <a href="http://www.thenounproject.com">Noun Project</a>.
+* Inspiration – Devan Colley's [picture](http://devan-colley.deviantart.com/art/The-Eye-of-Providence-439920143)

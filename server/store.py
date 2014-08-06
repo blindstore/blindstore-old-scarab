@@ -33,23 +33,23 @@ def _R(gammas, column, public_key):
 class Store:
     """A private store."""
 
-    def __init__(self, record_size=3, record_count=5, database=None):
+    def __init__(self, record_size=3, record_count=5, database=None, fill=0):
         """
         Creates a new private store.
         :param record_size: the size of each record, in bits.
         :param record_count: the number of records that can be stored.
         :param database: numpy matrix of database values.
         """
+        assert fill in [0, 1]
         if database is None:
             self.record_size = record_size
             self.record_count = record_count
-            self.database = np.array([[0] * record_size for _ in range(record_count)])
+            self.database = np.array([[fill] * record_size for _ in range(record_count)])
         else:
             self.record_count, self.record_size = database.shape
             self.database = database
 
         self.index_length = index_length(self.record_count)
-
 
     def retrieve2(self, cipher_query, public_key):
         """
@@ -73,13 +73,13 @@ class Store:
 
         precomputed = [
             [cipher_zro ^ x for x in cipher_query],  # 0
-            [cipher_one ^ x for x in cipher_query]   # 1
+            [cipher_one ^ x for x in cipher_query]  # 1
         ]
 
         def func(x):
             x_bits = binary(x, size=self.index_length)
             # Take the XOR of the negated index bit and query bit
-            gamma = [precomputed[1-bit][i] for bit, i in zip(x_bits, range(len(x_bits)))]
+            gamma = [precomputed[1 - bit][i] for bit, i in zip(x_bits, range(len(x_bits)))]
             # TODO optimize the AND step
             # After all, we keep ANDing the same set of bits and the order is not important.
             return reduce(_AND, gamma)
@@ -89,7 +89,6 @@ class Store:
 
         # TODO: make this parallel
         return map(lambda x: _R(gammas, self.database[:, x], public_key), range(self.record_size))
-
 
     def retrieve(self, cipher_query, public_key):
         """

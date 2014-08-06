@@ -1,6 +1,7 @@
 import math
 import numpy as np
 
+
 def binary(num, size=32):
     """Binary representation of an integer as a list of 0, 1
 
@@ -16,6 +17,6 @@ def binary(num, size=32):
     ret[ret.size - n.size:] = n
     return ret
 
+
 def index_length(record_count):
-    # TODO: fix (record_count=4 should result in 2, not 3)
-    return math.ceil(math.log(record_count, 2)) + 1
+    return math.ceil(math.log2(record_count))

@@ -34,7 +34,7 @@ def retrieve():
     public_key = PublicKey(str(request.form['PUBLIC_KEY']))
     enc_index = EncryptedArray(store.index_length, public_key, request.form['ENC_INDEX'])
     try:
-        enc_data = store.retrieve(enc_index, public_key)
+        enc_data = store.retrieve2(enc_index, public_key)
     except ValueError as e:
         print(str(e))
         return str(e), 400

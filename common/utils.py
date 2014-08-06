@@ -17,4 +17,5 @@ def binary(num, size=32):
     return ret
 
 def index_length(record_count):
+    # TODO: fix (record_count=4 should result in 2, not 3)
     return math.ceil(math.log(record_count, 2)) + 1

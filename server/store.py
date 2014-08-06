@@ -50,12 +50,15 @@ class Store:
 
         self.index_length = index_length(self.record_count)
 
+
     def retrieve2(self, cipher_query, public_key):
         """
+        Optimized retrieve() method.
 
-        ACHTUNG:
-        Alternative implementation with reusing the same cipher_zero and cipher_one.
+        - instead of XORing index bit, query bit and one (in gamma method), XOR query with negated index
+        - precalculate {0, 1} XOR {each bit of query index} and construct gammas from these precomputed values
 
+        This implementation performs 2*len(cipher_query) XORs to calculate all the gammas.
 
         Retrieves an encrypted record from the store, given a ciphered query.
         :param cipher_query: the encrypted index of the record to retrieve, as
@@ -64,24 +67,25 @@ class Store:
         :raises ValueError: if the length of cipher_query does not equal the \
                             Store's index_length.
         """
-        cipher_one = public_key.encrypt(1)
-        cipher_zro = public_key.encrypt(0)
 
-        def get_encoded_index(x):
-            arr = [cipher_one if bit == 1 else cipher_zro for bit in binary(x, size=self.index_length)]
-            enc = EncryptedArray(len(arr), public_key)
-            for i in range(len(arr)):
-                enc._array[i] = arr[i]._as_parameter_  # yes, I know, protected. How about moving this to pyscarab?
-            return enc
+        cipher_zro = public_key.encrypt(0)
+        cipher_one = public_key.encrypt(1)
+
+        precomputed = [
+            [cipher_zro ^ x for x in cipher_query],  # 0
+            [cipher_one ^ x for x in cipher_query]   # 1
+        ]
 
         def func(x):
-            x = get_encoded_index(x)
-            x = _gamma(cipher_query, x, cipher_one)
-            return x
+            x_bits = binary(x, size=self.index_length)
+            # Take the XOR of the negated index bit and query bit
+            gamma = [precomputed[1-bit][i] for bit, i in zip(x_bits, range(len(x_bits)))]
+            # TODO optimize the AND step
+            # After all, we keep ANDing the same set of bits and the order is not important.
+            return reduce(_AND, gamma)
 
-        # TODO: make this parallel
-        gammas = map(func, range(self.record_count))
-        gammas = np.array(list(gammas))
+        gammas = list(map(func, range(self.record_count)))
+        gammas = np.array(gammas)
 
         # TODO: make this parallel
         return map(lambda x: _R(gammas, self.database[:, x], public_key), range(self.record_size))

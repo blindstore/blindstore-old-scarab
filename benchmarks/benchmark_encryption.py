@@ -1,5 +1,6 @@
 from scarab import generate_pair
-from benchmarks.benchmark import Benchmark
+from benchmarks.benchmark import benchmark
+
 from common.utils import binary
 
 
@@ -11,5 +12,4 @@ def func():
     pk.encrypt(index, sk)
 
 
-b = Benchmark(func)
-b.run(100, verbose=True)
+benchmark(func, 100, verbose=True)

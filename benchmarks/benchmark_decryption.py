@@ -1,5 +1,5 @@
 from scarab import generate_pair
-from benchmarks.benchmark import Benchmark
+from benchmarks.benchmark import benchmark_precise
 from common.utils import binary
 
 
@@ -12,5 +12,4 @@ def func():
     sk.decrypt(encrypted_one)
 
 
-b = Benchmark(func)
-b.run_precise(10000, verbose=True)
+benchmark_precise(func, 10000, verbose=True)

@@ -1,5 +1,5 @@
 from scarab import generate_pair
-from benchmarks.benchmark import Benchmark
+from benchmarks.benchmark import benchmark
 from common.utils import binary
 
 
@@ -13,5 +13,4 @@ def func():
     _ = encrypted_one & encrypted_zro
 
 
-b = Benchmark(func)
-b.run(100, verbose=True, skip=10)
+benchmark(func, 100, verbose=True, skip=10)

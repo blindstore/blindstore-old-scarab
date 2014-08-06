@@ -1,5 +1,5 @@
 from scarab import generate_pair
-from benchmarks.benchmark import Benchmark
+from benchmarks.benchmark import benchmark
 from common.utils import binary
 from server import Store
 import numpy as np
@@ -16,5 +16,4 @@ eq = pk.encrypt(binary(index, size=store.index_length), sk)
 def func():
     list(store.retrieve(eq, pk))
 
-b = Benchmark(func)
-b.run(100, verbose=True)
+benchmark(func, 100, verbose=True)

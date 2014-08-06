@@ -4,7 +4,7 @@ from common.utils import binary
 from server import Store
 
 
-store = Store(record_size=20, record_count=20, fill=1)
+store = Store(record_size=20, record_count=20, fill='random')
 index = 2
 pk, sk = generate_pair()
 eq = pk.encrypt(binary(index, size=store.index_length), sk)

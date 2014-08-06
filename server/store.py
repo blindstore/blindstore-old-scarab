@@ -1,7 +1,9 @@
 from functools import reduce
+import random
 import numpy as np
-from scarab import generate_pair, EncryptedArray
+from scarab import generate_pair
 from common.utils import binary, index_length
+from server.cached_reducer import CachedReducer
 
 
 _AND = lambda a, b: a & b
@@ -19,7 +21,7 @@ def _gamma(cq, ci, co):
     return reduce(_AND, [x ^ co for x in cq ^ ci])
 
 
-def _R(gammas, column, public_key):
+def _R(gammas, column, enc_zero):
     """
     Calculates the value of R() function, as described in PDF (paragraph 3.1.3)
     :param gammas: gammas
@@ -27,7 +29,7 @@ def _R(gammas, column, public_key):
     :param public_key: public key
     :return: the value of the R function
     """
-    return reduce(_XOR, gammas[np.where(column == 1)], public_key.encrypt(0))
+    return reduce(_XOR, gammas[np.where(column == 1)], enc_zero)
 
 
 class Store:
@@ -39,56 +41,48 @@ class Store:
         :param record_size: the size of each record, in bits.
         :param record_count: the number of records that can be stored.
         :param database: numpy matrix of database values.
+        :param fill: value to fill the database with.
         """
-        assert fill in [0, 1]
         if database is None:
-            self.record_size = record_size
-            self.record_count = record_count
-            self.database = np.array([[fill] * record_size for _ in range(record_count)])
-        else:
-            self.record_count, self.record_size = database.shape
-            self.database = database
-
+            if fill == 'random':
+                arr = [[random.randint(0, 1) for j in range(record_size)] for i in range(record_count)]
+            else:
+                arr = [[fill] * record_size for _ in range(record_count)]
+            database = np.array(arr)
+        self.record_count, self.record_size = database.shape
+        self.database = database
         self.index_length = index_length(self.record_count)
 
     def retrieve2(self, cipher_query, public_key):
         """
-        Optimized retrieve() method.
-
-        - instead of XORing index bit, query bit and one (in gamma method), XOR query with negated index
-        - precalculate {0, 1} XOR {each bit of query index} and construct gammas from these precomputed values
-
-        This implementation performs 2*len(cipher_query) XORs to calculate all the gammas.
-
-        Retrieves an encrypted record from the store, given a ciphered query.
-        :param cipher_query: the encrypted index of the record to retrieve, as
-                             an :class:`~EncryptedArray`
-        :param public_key: the :class:`~PublicKey` to use.
-        :raises ValueError: if the length of cipher_query does not equal the \
-                            Store's index_length.
+        FHE operation results are now cached to speed up computation.
         """
-
         cipher_zro = public_key.encrypt(0)
         cipher_one = public_key.encrypt(1)
 
         precomputed = [
-            [cipher_zro ^ x for x in cipher_query],  # 0
+            [x for x in cipher_query],  # 0
             [cipher_one ^ x for x in cipher_query]  # 1
         ]
 
-        def func(x):
+        gamma_reducer = CachedReducer(_AND)
+
+        def func_gamma(x):
             x_bits = binary(x, size=self.index_length)
             # Take the XOR of the negated index bit and query bit
             gamma = [precomputed[1 - bit][i] for bit, i in zip(x_bits, range(len(x_bits)))]
-            # TODO optimize the AND step
-            # After all, we keep ANDing the same set of bits and the order is not important.
-            return reduce(_AND, gamma)
+            return gamma_reducer.reduce(gamma)
 
-        gammas = list(map(func, range(self.record_count)))
+        gammas = list(map(func_gamma, range(self.record_count)))
         gammas = np.array(gammas)
 
-        # TODO: make this parallel
-        return map(lambda x: _R(gammas, self.database[:, x], public_key), range(self.record_size))
+        r_reducer = CachedReducer(_XOR)
+
+        def func_r(x):
+            column = self.database[:, x]
+            return r_reducer.reduce(gammas[np.where(column == 1)], cipher_zro)
+
+        return map(func_r, range(self.record_size))
 
     def retrieve(self, cipher_query, public_key):
         """
@@ -100,6 +94,7 @@ class Store:
                             Store's index_length.
         """
         cipher_one = public_key.encrypt(1)
+        cipher_zro = public_key.encrypt(0)
 
         def func(x):
             x = binary(x, size=self.index_length)
@@ -112,7 +107,7 @@ class Store:
         gammas = np.array(list(gammas))
 
         # TODO: make this parallel
-        return map(lambda x: _R(gammas, self.database[:, x], public_key), range(self.record_size))
+        return map(lambda x: _R(gammas, self.database[:, x], cipher_zro), range(self.record_size))
 
     def set(self, idx, value):
         """

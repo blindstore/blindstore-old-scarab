@@ -5,6 +5,8 @@ blindstore
 
 Blindstore server
 
+[![Build Status](https://travis-ci.org/blindstore/blindstore.svg?branch=master)](https://travis-ci.org/blindstore/blindstore)
+
 Installation
 ------------
 

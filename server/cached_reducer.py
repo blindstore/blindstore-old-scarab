@@ -2,6 +2,8 @@ class CachedReducer:
     def __init__(self, func):
         self.func = func
         self.cache = {}
+        self.hits = 0
+        self.misses = 0
 
     def reduce(self, sequence, initial=None):
         """
@@ -36,4 +38,7 @@ class CachedReducer:
         if not v:
             v = self.func(x, y)
             self.cache[(x, y)] = v
+            self.misses += 1
+        else:
+            self.hits += 1
         return v

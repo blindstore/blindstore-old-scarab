@@ -40,14 +40,10 @@ class Store:
         :param record_count: the number of records that can be stored.
         :param database: numpy matrix of database values.
         """
-        if database is None:
-            self.record_size = record_size
-            self.record_count = record_count
-            self.database = np.array([[0] * record_size for _ in range(record_count)])
-        else:
-            self.record_count, self.record_size = database.shape
-            self.database = database
 
+        self.database = np.array([[0] * record_size for _ in range(record_count)]) if database is None else database
+        self.record_count, self.record_size = database.shape
+        # Index length is in bits
         self.index_length = index_length(self.record_count)
 
 

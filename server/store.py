@@ -63,11 +63,11 @@ class Store:
                             Store's index_blength.
         """
 
-        cipher_zro = public_key.encrypt(0)
+        cipher_zero = public_key.encrypt(0)
         cipher_one = public_key.encrypt(1)
 
         precomputed = [
-            [cipher_zro ^ x for x in cipher_query],  # 0
+            [cipher_zero ^ x for x in cipher_query],  # 0
             [cipher_one ^ x for x in cipher_query]   # 1
         ]
 

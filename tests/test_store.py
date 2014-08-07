@@ -1,7 +1,5 @@
 import numpy as np
-
 from nose.tools import *
-
 from scarab import generate_pair
 
 from server.store import Store
@@ -9,6 +7,7 @@ from common.utils import binary, encrypt_index
 
 RECORD_COUNT = 8
 RECORD_SIZE = 8
+
 
 class TestStore(object):
 
@@ -35,4 +34,3 @@ class TestStore(object):
         enc_data = self.store.retrieve(enc_index, pk)
         data = [sk.decrypt(bit) for bit in enc_data]
         assert_equals(data, new_value)
-

@@ -1,4 +1,7 @@
 from functools import reduce
+
+import numpy as np
+
 import random
 import numpy as np
 from common.utils import binary, index_bits

@@ -18,7 +18,7 @@ class TestStore(object):
     def test_retrieve(self):
         public_key, secret_key = generate_pair()
         index = 2
-        enc_index = public_key.encrypt(binary(index, size=self.store.index_length))
+        enc_index = public_key.encrypt(binary(index, size=self.store.index_blength))
         enc_data = self.store.retrieve(enc_index, public_key)
         data = [secret_key.decrypt(bit) for bit in enc_data]
         assert_true(all(data == self.db[index]))
@@ -29,7 +29,7 @@ class TestStore(object):
         self.store.set(index, new_value)
 
         public_key, secret_key = generate_pair()
-        enc_index = public_key.encrypt(binary(index, size=self.store.index_length))
+        enc_index = public_key.encrypt(binary(index, size=self.store.index_blength))
         enc_data = self.store.retrieve(enc_index, public_key)
         data = [secret_key.decrypt(bit) for bit in enc_data]
         assert_equals(data, new_value)

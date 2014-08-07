@@ -22,8 +22,8 @@ store = Store(database=np.array([[1, 1, 1, 1],
 def get_db_size():
     data = {
         'num_records': store.record_count,
-        'record_size': store.record_size,
-        'index_length': store.index_length
+        'record_size': store.record_blength,
+        'index_length': store.index_blength
     }
     return json.dumps(data), 200, {'Content-Type': 'text/json'}
 
@@ -32,7 +32,7 @@ def get_db_size():
 def retrieve():
     start = time.clock()
     public_key = PublicKey(str(request.form['PUBLIC_KEY']))
-    enc_index = EncryptedArray(store.index_length, public_key, request.form['ENC_INDEX'])
+    enc_index = EncryptedArray(store.index_blength, public_key, request.form['ENC_INDEX'])
     try:
         enc_data = store.retrieve2(enc_index, public_key)
     except ValueError as e:
@@ -50,6 +50,6 @@ def set():
     index = int(request.form['INDEX'])
     data = int.from_bytes(base64.b64decode(request.form['DATA']), 'big')
 
-    store.set(index, binary(data, store.record_size))
+    store.set(index, binary(data, store.record_blength))
     return '', 200
 

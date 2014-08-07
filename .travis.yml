@@ -2,13 +2,19 @@ language: python
 python:
     - "3.4"
 install: "pip install -r requirements.txt"
+env:
+    - LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib
 before_install:
     - sudo apt-get install build-essential m4 lzip unzip
-    - git clone https://github.com/blindstore/libScarab
-    - cd libScarab
-    - ./scripts/install-dependencies.sh
-    - make
-    - sudo make install
+    - mkdir lib
+    - cd lib
+    - wget http://goo.gl/B7rpyn?gdriveurl -O libflint.so
+    - wget http://goo.gl/vjZ8Gt?gdriveurl -O libgmp.so
+    - wget http://goo.gl/PLm4lS?gdriveurl -O libmpfr.so
+    - wget http://goo.gl/1D22fi?gdriveurl -O libscarab.so
+    - wget http://goo.gl/3978QB?gdriveurl -O libmpir.so
+    - sudo mv * /usr/local/lib
+    - sudo ldconfig
     - cd ..
 script: nosetests .
 notifications:

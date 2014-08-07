@@ -1,6 +1,8 @@
 from functools import reduce
+
 import numpy as np
 from scarab import generate_pair, EncryptedArray
+
 from common.utils import binary, index_length
 
 
@@ -45,7 +47,6 @@ class Store:
         self.record_count, self.record_blength = database.shape
         self.index_blength = index_length(self.record_count)
 
-
     def retrieve2(self, cipher_query, public_key):
         """
         Optimized retrieve() method.
@@ -84,7 +85,6 @@ class Store:
 
         # TODO: make this parallel
         return map(lambda x: _R(gammas, self.database[:, x], public_key), range(self.record_blength))
-
 
     def retrieve(self, cipher_query, public_key):
         """

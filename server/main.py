@@ -1,10 +1,10 @@
 import base64
 import json
-
-from flask import Flask, request
-import numpy as np
-from scarab import EncryptedArray, PublicKey
 import time
+
+import numpy as np
+from flask import Flask, request
+from scarab import EncryptedArray, PublicKey
 
 from .store import Store
 from common.utils import binary
@@ -52,4 +52,3 @@ def set():
 
     store.set(index, binary(data, store.record_blength))
     return '', 200
-

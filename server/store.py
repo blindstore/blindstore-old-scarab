@@ -1,90 +1,66 @@
 from functools import reduce
 
 import numpy as np
-from scarab import generate_pair, EncryptedArray
 
-from common.utils import binary, index_length
+import random
+import numpy as np
+from common.utils import binary, index_bits
 
 
 _AND = lambda a, b: a & b
 _XOR = lambda a, b: a ^ b
 
 
-def _gamma(cq, ci, co):
+def _gamma(cipher_query, cipher_index, cipher_one):
     """
-    Calculates the value of the gamma function, as described in PDF (paragraph 3.1.2)
-    :param cq: cipher query
-    :param ci: cipher index
-    :param co: cipher one
+    Calculates the value of the gamma function, as described in PDF
+    (paragraph 3.1.2)
+    :param cipher_query: cipher query
+    :param cipher_index: cipher index
+    :param cipher_one: cipher one
     :return: the value of the gamma function
     """
-    return reduce(_AND, [x ^ co for x in cq ^ ci])
+    return reduce(_AND, [x for x in cipher_query ^ cipher_index], cipher_one)
 
 
-def _R(gammas, column, public_key):
+def _R(gammas, column, cipher_zero):
     """
     Calculates the value of R() function, as described in PDF (paragraph 3.1.3)
     :param gammas: gammas
     :param column: column
-    :param public_key: public key
+    :param enc_zero: encrypted zero
     :return: the value of the R function
     """
-    return reduce(_XOR, gammas[np.where(column == 1)], public_key.encrypt(0))
+    return reduce(_XOR, gammas[np.where(column == 1)], cipher_zero)
 
 
 class Store:
     """A private store."""
 
-    def __init__(self, record_blength=3, record_count=5, database=None):
+    def __init__(self, record_size=3, record_count=5, database=None, fill=0):
         """
         Creates a new private store.
-        :param record_blength: the size of each record, in bits.
-        :param record_count: the number of records that can be stored.
+        :param record_size: the size of each record, in bits.
+        :param record_count: the number of records.
         :param database: numpy matrix of database values.
+        :param fill: value to fill the database with.
         """
+        if database is None:
+            array = None
+            if fill == 'random':
+                array = [[random.randint(0, 1) for _ in range(record_size)]
+                    for _ in range(record_count)]
+            else:
+                array = [[fill] * record_size for _ in range(record_count)]
+            database = np.array(array)
 
-        self.database = np.array([[0] * record_size for _ in range(record_count)]) if database is None else database
-        self.record_count, self.record_blength = database.shape
-        self.index_blength = index_length(self.record_count)
+        self.record_count, self.record_size = database.shape
+        self.database = database
+        self.index_bits = index_bits(self.record_count)
 
-    def retrieve2(self, cipher_query, public_key):
-        """
-        Optimized retrieve() method.
-
-        - instead of XORing index bit, query bit and one (in gamma method), XOR query with negated index
-        - precalculate {0, 1} XOR {each bit of query index} and construct gammas from these precomputed values
-
-        This implementation performs 2*len(cipher_query) XORs to calculate all the gammas.
-
-        Retrieves an encrypted record from the store, given a ciphered query.
-        :param cipher_query: the encrypted index of the record to retrieve, as
-                             an :class:`~EncryptedArray`
-        :param public_key: the :class:`~PublicKey` to use.
-        :raises ValueError: if the length of cipher_query does not equal the \
-                            Store's index_blength.
-        """
-
-        cipher_zero = public_key.encrypt(0)
-        cipher_one = public_key.encrypt(1)
-
-        precomputed = [
-            [cipher_zero ^ x for x in cipher_query],  # 0
-            [cipher_one ^ x for x in cipher_query]   # 1
-        ]
-
-        def func(x):
-            x_bits = binary(x, size=self.index_blength)
-            # Take the XOR of the negated index bit and query bit
-            gamma = [precomputed[1-bit][i] for bit, i in zip(x_bits, range(len(x_bits)))]
-            # TODO optimize the AND step
-            # After all, we keep ANDing the same set of bits and the order is not important.
-            return reduce(_AND, gamma)
-
-        gammas = list(map(func, range(self.record_count)))
-        gammas = np.array(gammas)
-
-        # TODO: make this parallel
-        return map(lambda x: _R(gammas, self.database[:, x], public_key), range(self.record_blength))
+        # precompute binary representation for index
+        self.binary_index = [binary(x, size=self.index_bits) \
+            for x in range(self.record_count)]
 
     def retrieve(self, cipher_query, public_key):
         """
@@ -96,38 +72,32 @@ class Store:
                             Store's index_blength.
         """
         cipher_one = public_key.encrypt(1)
+        cipher_zero = public_key.encrypt(0)
 
-        def func(x):
-            x = binary(x, size=self.index_blength)
-            x = public_key.encrypt(x)
-            x = _gamma(cipher_query, x, cipher_one)
-            return x
-
-        # TODO: make this parallel
-        gammas = map(func, range(self.record_count))
-        gammas = np.array(list(gammas))
+        def gamma(bits):
+            bits = public_key.encrypt(bits)
+            bits = _gamma(cipher_query, bits, cipher_one)
+            return bits
 
         # TODO: make this parallel
-        return map(lambda x: _R(gammas, self.database[:, x], public_key), range(self.record_blength))
+        gammas = np.array([gamma(bits) for bits in self.binary_index])
 
-    def set(self, idx, value):
+        assert (len(gammas) == self.record_count)
+
+        # TODO: make this parallel
+        return [_R(gammas, self.database[:, x], cipher_zero) \
+            for x in range(self.record_size)]
+
+    def set(self, i, value):
         """
         Set a value in the array.
-        :param idx: the unencrypted index to set.
+        :param i: the unencrypted index to set.
         :param value: the unencrypted value.
         """
-        if len(value) < self.record_blength:
-            padded_value = np.zeros(self.record_blength, dtype=np.int)
+        if len(value) < self.record_size:
+            padded_value = np.zeros(self.record_size, dtype=np.int)
             padded_value[padded_value.size - len(value):] = value
         else:
             padded_value = value
 
-        self.database[idx] = padded_value
-
-
-if __name__ == '__main__':
-    store = Store(record_count=8, record_blength=8)
-    pk, sk = generate_pair()
-    index = 2
-    enc_data = store.retrieve(pk.encrypt(binary(index, size=store.index_blength)), pk)
-    print([sk.decrypt(bit) for bit in enc_data])
+        self.database[i] = padded_value

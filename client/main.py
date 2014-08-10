@@ -6,7 +6,7 @@ import base64
 from scarab import EncryptedArray, EncryptedBit, \
     PrivateKey, PublicKey, generate_pair
 
-from common.utils import binary
+from common.utils import binary, encrypt_index
 
 
 class BlindstoreArray:
@@ -32,7 +32,7 @@ class BlindstoreArray:
         obj = json.loads(r.text)
         self.length = obj['num_records']
         self.record_size = obj['record_size']
-        self.index_length = obj['index_length']
+        self.index_bits = obj['index_bits']
 
     def retrieve(self, index):
         """
@@ -41,11 +41,12 @@ class BlindstoreArray:
         :returns: the value stored at the given index, as a bit array.
         """
         public_key, secret_key = generate_pair()
-        enc_index = public_key.encrypt(binary(index, size=self.index_length), secret_key)
+        enc_index = encrypt_index(public_key, index, self.index_bits)
 
         data = {'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index)}
         r = requests.post(self.url + 'retrieve', data=data)
-        enc_data = [EncryptedBit(public_key, str(s)) for s in json.loads(r.text)]
+        enc_data = [EncryptedBit(public_key, str(s)) \
+            for s in json.loads(r.text)]
         return [secret_key.decrypt(bit) for bit in enc_data]
 
     def set(self, index, data):

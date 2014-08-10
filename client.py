@@ -1,12 +1,18 @@
 import time
 from client import BlindstoreArray
 
+import scarab
+
+from common.utils import encrypt_index
+
 
 if __name__ == '__main__':
     array = BlindstoreArray('http://localhost:5000/')
-    print(array.length, array.record_size, array.index_length)
+    print('Records: {}, Size: {}, Bits: {}'.format(
+        array.length, array.record_size, array.index_bits))
 
     start = time.clock()
+
     print(array.retrieve(1))
     print('Retrieved in', time.clock()-start, 'seconds')
 

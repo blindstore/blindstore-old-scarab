@@ -3,6 +3,7 @@ import json
 import time
 
 import numpy as np
+
 from flask import Flask, request
 from scarab import EncryptedArray, PublicKey
 
@@ -22,8 +23,8 @@ store = Store(database=np.array([[1, 1, 1, 1],
 def get_db_size():
     data = {
         'num_records': store.record_count,
-        'record_size': store.record_blength,
-        'index_length': store.index_blength
+        'record_size': store.record_size,
+        'index_bits': store.index_bits
     }
     return json.dumps(data), 200, {'Content-Type': 'text/json'}
 
@@ -32,9 +33,9 @@ def get_db_size():
 def retrieve():
     start = time.clock()
     public_key = PublicKey(str(request.form['PUBLIC_KEY']))
-    enc_index = EncryptedArray(store.index_blength, public_key, request.form['ENC_INDEX'])
+    enc_index = EncryptedArray(store.index_bits, public_key, request.form['ENC_INDEX'])
     try:
-        enc_data = store.retrieve2(enc_index, public_key)
+        enc_data = store.retrieve(enc_index, public_key)
     except ValueError as e:
         print(str(e))
         return str(e), 400
@@ -49,6 +50,5 @@ def retrieve():
 def set():
     index = int(request.form['INDEX'])
     data = int.from_bytes(base64.b64decode(request.form['DATA']), 'big')
-
-    store.set(index, binary(data, store.record_blength))
+    store.set(index, binary(data, store.record_size))
     return '', 200

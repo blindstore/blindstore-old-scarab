@@ -1,5 +1,7 @@
 import math
+
 import numpy as np
+from scarab import EncryptedArray
 
 
 def binary(num, size=32):
@@ -8,7 +10,7 @@ def binary(num, size=32):
     >>> binary(10, 8)
     [0, 0, 0, 0, 1, 0, 1, 0]
 
-    :param num:
+    :param num: integer
     :param size: size (pads with zeros)
     :return: the binary representation of num
     """
@@ -18,5 +20,17 @@ def binary(num, size=32):
     return ret
 
 
-def index_length(record_count):
+def index_bits(record_count):
     return math.ceil(math.log2(record_count))
+
+
+def encrypt_index(pk, index, bits):
+    """Encrypts the index for Blindstore query
+
+    :param pk: PublicKey object
+    :param index: index
+    :param bits: number of bits to use for index
+    """
+    enc_ones = pk.encrypt([1] * bits)
+    enc_index = pk.encrypt(binary(index, size=bits)) ^ enc_ones
+    return enc_index

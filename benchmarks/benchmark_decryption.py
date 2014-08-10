@@ -1,5 +1,10 @@
+import sys.path
+import os.path
+# Import from sibling directory
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 from scarab import generate_pair
-from benchmarks.benchmark import benchmark_precise
+from benchmark import benchmark_precise
 from common.utils import binary
 
 

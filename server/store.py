@@ -1,26 +1,26 @@
 from functools import reduce
 import random
 import numpy as np
-from common.utils import binary, index_length
-from server.cached_reducer import CachedReducer
+from common.utils import binary, index_bits
 
 
 _AND = lambda a, b: a & b
 _XOR = lambda a, b: a ^ b
 
 
-def _gamma(cq, ci, co):
+def _gamma(cipher_query, cipher_index, cipher_one):
     """
-    Calculates the value of the gamma function, as described in PDF (paragraph 3.1.2)
-    :param cq: cipher query
-    :param ci: cipher index
-    :param co: cipher one
+    Calculates the value of the gamma function, as described in PDF
+    (paragraph 3.1.2)
+    :param cipher_query: cipher query
+    :param cipher_index: cipher index
+    :param cipher_one: cipher one
     :return: the value of the gamma function
     """
-    return reduce(_AND, [x ^ co for x in cq ^ ci])
+    return reduce(_AND, [x for x in cipher_query ^ cipher_index], cipher_one)
 
 
-def _R(gammas, column, enc_zero):
+def _R(gammas, column, cipher_zero):
     """
     Calculates the value of R() function, as described in PDF (paragraph 3.1.3)
     :param gammas: gammas
@@ -28,7 +28,7 @@ def _R(gammas, column, enc_zero):
     :param enc_zero: encrypted zero
     :return: the value of the R function
     """
-    return reduce(_XOR, gammas[np.where(column == 1)], enc_zero)
+    return reduce(_XOR, gammas[np.where(column == 1)], cipher_zero)
 
 
 class Store:
@@ -38,56 +38,26 @@ class Store:
         """
         Creates a new private store.
         :param record_size: the size of each record, in bits.
-        :param record_count: the number of records that can be stored.
+        :param record_count: the number of records.
         :param database: numpy matrix of database values.
         :param fill: value to fill the database with.
         """
         if database is None:
+            array = None
             if fill == 'random':
-                arr = [[random.randint(0, 1) for _ in range(record_size)] for _ in range(record_count)]
+                array = [[random.randint(0, 1) for _ in range(record_size)]
+                    for _ in range(record_count)]
             else:
-                arr = [[fill] * record_size for _ in range(record_count)]
-            database = np.array(arr)
+                array = [[fill] * record_size for _ in range(record_count)]
+            database = np.array(array)
+
         self.record_count, self.record_size = database.shape
         self.database = database
-        self.index_length = index_length(self.record_count)
+        self.index_bits = index_bits(self.record_count)
 
-    def retrieve2(self, cipher_query, public_key):
-        """
-        Retrieves an encrypted record from the store, given a ciphered query.
-        FHE operation results are now cached to speed up computation.
-        :param cipher_query: the encrypted index of the record to retrieve, as
-                             an :class:`~EncryptedArray`
-        :param public_key: the :class:`~PublicKey` to use.
-        :raises ValueError: if the length of cipher_query does not equal the \
-                            Store's index_length.
-        """
-        cipher_zro = public_key.encrypt(0)
-        cipher_one = public_key.encrypt(1)
-
-        precomputed = [
-            [x for x in cipher_query],  # 0
-            [cipher_one ^ x for x in cipher_query]  # 1
-        ]
-
-        gamma_reducer = CachedReducer(_AND)  # must be instantiated separately for each thread
-
-        def func_gamma(x):
-            x_bits = binary(x, size=self.index_length)
-            # Take the XOR of the negated index bit and query bit
-            gamma = [precomputed[1 - bit][i] for bit, i in zip(x_bits, range(len(x_bits)))]
-            return gamma_reducer.reduce(gamma)
-
-        gammas = list(map(func_gamma, range(self.record_count)))
-        gammas = np.array(gammas)
-
-        r_reducer = CachedReducer(_XOR)  # must be instantiated separately for each thread
-
-        def func_r(x):
-            column = self.database[:, x]
-            return r_reducer.reduce(gammas[np.where(column == 1)], cipher_zro)
-
-        return list(map(func_r, range(self.record_size)))
+        # precompute binary representation for index
+        self.binary_index = [binary(x, size=self.index_bits) \
+            for x in range(self.record_count)]
 
     def retrieve(self, cipher_query, public_key):
         """
@@ -96,28 +66,29 @@ class Store:
                              an :class:`~EncryptedArray`
         :param public_key: the :class:`~PublicKey` to use.
         :raises ValueError: if the length of cipher_query does not equal the \
-                            Store's index_length.
+                            Store's index_blength.
         """
         cipher_one = public_key.encrypt(1)
-        cipher_zro = public_key.encrypt(0)
+        cipher_zero = public_key.encrypt(0)
 
-        def func(x):
-            x = binary(x, size=self.index_length)
-            x = public_key.encrypt(x)
-            x = _gamma(cipher_query, x, cipher_one)
-            return x
-
-        # TODO: make this parallel
-        gammas = map(func, range(self.record_count))
-        gammas = np.array(list(gammas))
+        def gamma(bits):
+            bits = public_key.encrypt(bits)
+            bits = _gamma(cipher_query, bits, cipher_one)
+            return bits
 
         # TODO: make this parallel
-        return list(map(lambda x: _R(gammas, self.database[:, x], cipher_zro), range(self.record_size)))
+        gammas = np.array([gamma(bits) for bits in self.binary_index])
 
-    def set(self, idx, value):
+        assert (len(gammas) == self.record_count)
+
+        # TODO: make this parallel
+        return [_R(gammas, self.database[:, x], cipher_zero) \
+            for x in range(self.record_size)]
+
+    def set(self, i, value):
         """
         Set a value in the array.
-        :param idx: the unencrypted index to set.
+        :param i: the unencrypted index to set.
         :param value: the unencrypted value.
         """
         if len(value) < self.record_size:
@@ -126,4 +97,4 @@ class Store:
         else:
             padded_value = value
 
-        self.database[idx] = padded_value
+        self.database[i] = padded_value

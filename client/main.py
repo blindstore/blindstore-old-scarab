@@ -6,7 +6,7 @@ import base64
 from scarab import EncryptedArray, EncryptedBit, \
     PrivateKey, PublicKey, generate_pair
 
-from common.utils import binary
+from common.utils import binary, encrypt_index
 
 
 class BlindstoreArray:
@@ -41,11 +41,7 @@ class BlindstoreArray:
         :returns: the value stored at the given index, as a bit array.
         """
         public_key, secret_key = generate_pair()
-        enc_index = public_key.encrypt(
-            binary(index, size=self.index_bits), secret_key)
-        enc_one = public_key.encrypt(1)
-        for i in range(len(enc_index)):
-            enc_index[i] = enc_index[i] + enc_one
+        enc_index = encrypt_index(public_key, index, self.index_bits)
 
         data = {'PUBLIC_KEY': str(public_key), 'ENC_INDEX': str(enc_index)}
         r = requests.post(self.url + 'retrieve', data=data)

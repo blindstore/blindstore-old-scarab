@@ -18,9 +18,9 @@ def benchmark(func, iterations, verbose=False, skip=1):
     med = numpy.median(results)
 
     if verbose:
-        print('Average :', avg)
-        print('Median  :', med)
-        print('Std dev :', std)
+        print('Average :', avg, 's')
+        print('Median  :', med, 's')
+        print('Std dev :', std, 's')
 
     return avg, std, med, results
 

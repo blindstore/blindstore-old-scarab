@@ -6,10 +6,10 @@ from benchmarks.benchmark import benchmark
 from scarab import generate_pair
 from common.utils import binary
 
-pk, sk = generate_pair()
-index = binary(42, size=8)
-encrypted_one = pk.encrypt(1)
-encrypted_zro = pk.encrypt(0)
+
+pk, _ = generate_pair()
+encrypted_one = pk.encrypt(0)
+encrypted_zro = pk.encrypt(1)
 
 
 def func():

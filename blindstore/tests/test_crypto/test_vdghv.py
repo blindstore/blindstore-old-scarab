@@ -1,5 +1,7 @@
 """Test HE"""
 
+import json
+
 from contracts.interface import ContractNotRespected
 from gmpy2 import mpz, is_odd, random_state, digits
 from nose.tools import *
@@ -76,8 +78,12 @@ class TestCiphertext(object):
         assert_raises(ContractNotRespected, Ciphertext, self.pk, 1)
         assert_raises(ContractNotRespected, Ciphertext, 1, self.data)
 
-    def test_init(self):
+    def test_init_mpz_list(self):
         c = Ciphertext(self.pk, self.data)
+        assert_true(isinstance(c, Ciphertext))
+
+    def test_init_str(self):
+        c = Ciphertext(self.pk, json.dumps([digits(c, 2) for c in self.data]))
         assert_true(isinstance(c, Ciphertext))
 
     def test_serialization(self):
@@ -95,6 +101,7 @@ class TestContext(object):
     def test_generate_keypair(self):
         context = Context(30, 60)
         assert_true(isinstance(context.pk, PublicKey))
+        assert_true(isinstance(context.sk, PrivateKey))
 
     def test_encryption(self):
         context = Context(5)

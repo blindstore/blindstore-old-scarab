@@ -3,12 +3,18 @@ blindstore
 
 Blindstore library
 
-Temporary installation
-----------------------
+Installation (temp)
+-------------------
 
 [Install](http://gmpy2.readthedocs.org/en/latest/intro.html) the system requirements for gmpy2.
 
+Then
+
 ```pip install -r requirements.txt```
+
+To run tests
+
+```nosetests .```
 
 License
 -------

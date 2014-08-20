@@ -165,12 +165,12 @@ class Context(object):
 
     @contract
     def encrypt(self, bits, reuse_parameters=False):
-        """Encrypt list of bits. Both private key and private key needed
+        """Encrypt list of bits. Both public key and private key needed
 
         Corresponds to HE.ENCRYPT(pk, m) procedure
 
         :param bits: list of bits
-        :type bits: list[int]
+        :type bits: list(int)
         :param reuse_parameters: if True, will generate q, r only once.
             If False, will generate new q, r for every bit
         :type reuse_parameters: bool

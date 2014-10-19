@@ -16,8 +16,7 @@ except ImportError:
     print("Warning: no logging defined", file=sys.stderr)
     demo_logger = None
 else:
-    demo_logger = bs_demo.DemoClient('http://training-molina.cern.ch')
-    #demo_logger = bs_demo.DemoClient('http://dellvostropersonaldk.dyndns.cern.ch:3000')
+    demo_logger = bs_demo.DemoClient('http://localhost:3000')
 
 def demo_log(title, message):
     if demo_logger is not None:
@@ -43,12 +42,14 @@ def get_db_size():
         'record_size': store.record_size,
         'index_length': store.index_length
     }
+    demo_log("Received and answered query for DB metadata", "")
     return json.dumps(data), 200, {'Content-Type': 'text/json'}
 
 
 @app.route('/retrieve', methods=['POST'])
 def retrieve():
-    demo_log("Received query", request.form['ENC_INDEX'])
+    demo_log("Received query for a DB entry", request.form['ENC_INDEX'])
+
     print("Starting retrieve call...")
     start = time.clock()
 
@@ -63,7 +64,7 @@ def retrieve():
     s_bits = [str(b) for b in enc_data]
     obj = json.dumps(s_bits)
 
-    demo_log("Retrieved an encrypted row", obj)
+    demo_log("Retrieved an encrypted row from store and sent it", obj)
     print('Retrieve() took', time.clock() - start, 'seconds')
     return obj
 
@@ -73,7 +74,7 @@ def set():
     index = int(request.form['INDEX'])
     data = int.from_bytes(base64.b64decode(request.form['DATA']), 'big')
 
-    demo_log("Set", "Set row {index} to {data}".format(index=index, data=data))
+    demo_log("Received request to update DB entry", "Set row {index} to {data}".format(index=index, data=data))
 
     store.set(index, binary(data, store.record_size))
     server_status(store.database)

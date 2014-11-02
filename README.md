@@ -7,7 +7,7 @@ Blindstore server
 
 [![Build Status](https://travis-ci.org/blindstore/blindstore.svg?branch=master)](https://travis-ci.org/blindstore/blindstore)
 
-Note that this is a deprecated proof-of-concept implementation. Efficient implementation is an on-going effort mostly happening in ['libshe' repository](https://github.com/blindstore/libshe) (Somewhat Homomorphic Encryption for PIR).
+Note that this is a deprecated proof-of-concept implementation. Efficient implementation is an on-going effort mostly happening in ['blindstore/blindstore' repository](https://github.com/blindstore/blindstore).
 
 Installation
 ------------
